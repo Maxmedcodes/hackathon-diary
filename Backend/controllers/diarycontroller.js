@@ -9,7 +9,17 @@ async function index(req, res) {
   }
 }
 
+async function create(req, res) {
+  try {
+    const data = req.body;
+    const diaryEntry = await diary.createDiary(data);
+    res.status(201).json(diaryEntry);
+  } catch (err) {
+    res.status(400).json({ "error": err.message })
+  }
+}
 
 module.exports = {
     index,
+    create,
 };

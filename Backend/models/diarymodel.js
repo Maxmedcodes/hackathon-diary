@@ -1,11 +1,13 @@
 const db = require('../db/connect');
 
 class DiaryModel {
-    constructor({ id, title, content, date }) {
+    constructor({ id, title, content, date, category, created_at }) {
         this.id = id;
         this.title = title;
         this.content = content;
-        this.date = date;
+        this.category = category;
+        this.createdAt = new Date(created_at).toISOString();
+        
     }
 
     static async getAllDiaries() {
@@ -19,17 +21,17 @@ class DiaryModel {
     }
 
     static async createDiary({ title, content, category }) {
-    const response = await db.query(
-        'INSERT INTO diaryentries (title, content, category) VALUES ($1, $2, $3) RETURNING *',
-        [title, content, category]
-    );
+        const response = await db.query(
+            'INSERT INTO diaryentries (title, content, category) VALUES ($1, $2, $3) RETURNING *',
+            [title, content, category]
+        );
 
-    if (response.rows.length === 0) {
-        throw new Error("Failed to create diary entry.");
+        if (response.rows.length === 0) {
+            throw new Error("Failed to create diary entry.");
+        }
+
+        return new DiaryModel(response.rows[0]);
     }
-
-    return new DiaryModel(response.rows[0]);
-}
 
 }
 
