@@ -1,98 +1,160 @@
+import { fetchEntries, createEntry, updateEntry, deleteEntry } from './backendapi.js';
 
-    const entryList = document.querySelector('.entry-list');
-    const addEntryBtn = document.querySelector('.add-entry-btn');
-    const saveBtn = document.querySelector('.btn-save');
-    const deleteBtn = document.querySelector('.btn-delete');
-    const dateInput = document.querySelector('.date-input');
-    const textEditor = document.querySelector('.text-editor');
+const entryList = document.querySelector('.entry-list');
+const addEntryBtn = document.querySelector('.add-entry-btn');
+const saveBtn = document.querySelector('.btn-save');
+const deleteBtn = document.querySelector('.btn-delete');
+const dateInput = document.querySelector('.date-input');
+const textEditor = document.querySelector('.text-editor');
 
-    let entries = []; // Array to hold entry objects
-    let activeIndex = null; // Track selected entry
+let entries = [];
+let activeEntry = null;
 
-    // Load initial entries
-    document.querySelectorAll('.entry-item').forEach((item, index) => {
-        const date = item.querySelector('.entry-date').innerText;
-        const text = item.querySelector('.entry-preview').innerText;
 
-        entries.push({ date, text });
-        item.addEventListener('click', () => loadEntry(index));
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadEntriesFromBackend();
+});
 
-    function loadEntry(index) {
-        const entry = entries[index];
-        if (!entry) return;
-        activeIndex = index;
-        textEditor.value = entry.text;
-        dateInput.value = formatDateInput(entry.date);
-    }
-
-    function formatDateInput(dateString) {
-        const parsedDate = new Date(dateString);
-        return parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    }
-
-    function formatDateDisplay(inputValue) {
-        const date = new Date(inputValue);
-        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    }
-
-    addEntryBtn.addEventListener('click', () => {
-        const newEntry = {
-            date: formatDateDisplay(new Date().toISOString()),
-            text: ''
-        };
-        entries.unshift(newEntry);
+async function loadEntriesFromBackend() {
+    try {
+        entries = await fetchEntries();
         renderEntryList();
-        loadEntry(0);
-    });
-
-    saveBtn.addEventListener('click', () => {
-        if (activeIndex === null) return;
-        entries[activeIndex].text = textEditor.value;
-        entries[activeIndex].date = formatDateDisplay(dateInput.value);
+        console.log('Entries loaded successfully:', entries);
+    } catch (error) {
+        console.error('Error loading entries:', error);
+        entries = [];
         renderEntryList();
-    });
+    }
+}
 
-    function renderEntryList() {
+function loadEntry(entry, clickEvent = null) { 
+    activeEntry = entry;
+    textEditor.value = entry.content || '';
+    dateInput.value = formatDateForInput(entry.createdAt);
+    
+    
+    document.querySelectorAll('.entry-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    if (clickEvent && clickEvent.target) {
+        clickEvent.target.closest('.entry-item').classList.add('active');
+    } else {
+        const entryItems = document.querySelectorAll('.entry-item');
+        entryItems.forEach((item, index) => {
+            if (entries[index] && entries[index].id === entry.id) {
+                item.classList.add('active');
+            }
+        });
+    }
+}
+
+function formatDateForInput(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+}
+
+function formatDateDisplay(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+}
+
+addEntryBtn.addEventListener('click', async () => {
+    const newEntry = {
+        title: `Entry ${new Date().toLocaleDateString()}`,
+        content: 'Write your thoughts here...',
+        category: 'general'
+    };
+    
+    try {
+        const createdEntry = await createEntry(newEntry);
+        entries.unshift(createdEntry);
+        renderEntryList();
+        loadEntry(createdEntry); 
+        console.log('Entry created successfully:', createdEntry);
+    } catch (error) {
+        console.error('Error creating entry:', error);
+        alert('Failed to create entry. Please try again.');
+    }
+});
+
+saveBtn.addEventListener('click', async () => {
+    if (!activeEntry) {
+        alert('Please select an entry to save.');
+        return;
+    }
+    
+    const updatedData = {
+        content: textEditor.value
+    };
+    
+    try {
+        const updatedEntry = await updateEntry(activeEntry.id, updatedData);
+        const index = entries.findIndex(e => e.id === activeEntry.id);
+        if (index !== -1) {
+            entries[index] = updatedEntry;
+            activeEntry = updatedEntry;
+            renderEntryList();
+        }
+        alert('Entry saved successfully!');
+        console.log('Entry updated successfully:', updatedEntry);
+    } catch (error) {
+        console.error('Error saving entry:', error);
+        alert('Failed to save entry. Please try again.');
+    }
+});
+
+deleteBtn.addEventListener('click', async () => {
+    if (!activeEntry) {
+        alert('Please select an entry to delete.');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to delete this entry?')) return;
+    
+    try {
+        await deleteEntry(activeEntry.id);
+        entries = entries.filter(e => e.id !== activeEntry.id);
+        activeEntry = null;
+        textEditor.value = '';
+        dateInput.value = '';
+        renderEntryList();
+        alert('Entry deleted successfully!');
+        console.log('Entry deleted successfully');
+    } catch (error) {
+        console.error('Error deleting entry:', error);
+        alert('Failed to delete entry. Please try again.');
+    }
+});
+
+function renderEntryList() {
     entryList.innerHTML = '';
-    entries.forEach((entry, index) => {
+    
+    if (entries.length === 0) {
+        entryList.innerHTML = '<li class="no-entries">No entries yet. Create your first entry!</li>';
+        return;
+    }
+    
+    entries.forEach((entry) => {
         const li = document.createElement('li');
         li.className = 'entry-item';
-
-        // --- New logic: only show first 10 words with 'read more' if longer ---
-        const previewWords = entry.text.split(" ").slice(0, 10).join(" ");
-        const previewText = entry.text.split(" ").length > 10
+        
+        const previewWords = entry.content.split(" ").slice(0, 10).join(" ");
+        const previewText = entry.content.split(" ").length > 10
             ? previewWords + ' <span class="read-more">...read more</span>'
             : previewWords;
 
         li.innerHTML = `
-            <div class="entry-date">${entry.date}</div>
+            <div class="entry-date">${formatDateDisplay(entry.createdAt)}</div>
             <div class="entry-preview">${previewText}</div>
         `;
 
-        li.addEventListener('click', () => loadEntry(index));
+        li.addEventListener('click', (event) => loadEntry(entry, event)); 
         entryList.appendChild(li);
     });
 }
-
-
-    deleteBtn.addEventListener('click', () => {
-        if (activeIndex === null) return;
-        entries.splice(activeIndex, 1);
-        activeIndex = null;
-        renderEntryList();
-        textEditor.value = '';
-        dateInput.value = '';
-    });
-
-
-// truncate the Preview words
-document.querySelectorAll('.entry-preview').forEach(preview => {
-        const fullText = preview.innerText;
-        const words = fullText.split(' ');
-        if (words.length > 10) {
-            const shortText = words.slice(0, 10).join(' ') + '...read more';
-            preview.innerText = shortText;
-        }
-});
     

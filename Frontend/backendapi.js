@@ -1,7 +1,7 @@
 // backendapi.js
 // Handles API calls between the frontend and backend for diary CRUD operations
 
-const API_BASE_URL = 'http://localhost:3000/api/diary'; 
+const API_BASE_URL = 'http://localhost:3000/diary'; 
 
 // Fetch all diary entries
 export async function fetchEntries() {
@@ -23,8 +23,8 @@ export async function createEntry(entry) {
 
 // Update an existing diary entry by ID
 export async function updateEntry(id, entry) {
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
+    const response = await fetch(`${API_BASE_URL}/entry/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
     });
@@ -34,7 +34,7 @@ export async function updateEntry(id, entry) {
 
 // Delete a diary entry by ID
 export async function deleteEntry(id) {
-    const response = await fetch(`${API_BASE_URL}/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/entry/${id}`, {
         method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete entry');
