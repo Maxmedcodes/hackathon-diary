@@ -19,7 +19,18 @@ async function create(req, res) {
   }
 }
 
+async function show(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    const diaryEntry = await diary.getEntryById(id);
+    res.status(200).json(diaryEntry);
+  } catch (err) {
+    res.status(404).json({ "error": err.message })
+  }
+}
+
 module.exports = {
     index,
     create,
+    show,
 };

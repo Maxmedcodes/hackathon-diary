@@ -33,6 +33,16 @@ class DiaryModel {
         return new DiaryModel(response.rows[0]);
     }
 
+    static async getEntryById(id) {
+        const response = await db.query("SELECT * FROM diaryentries WHERE id = $1;", [id]);
+
+        if (response.rows.length != 1) {
+            throw new Error("Unable to locate diary entry.")
+        }
+
+        return new DiaryModel(response.rows[0]);
+    }
+
 }
 
 module.exports = DiaryModel;
