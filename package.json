@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "nodemon -L index.js",
-    "setup-db": "node ./db/setup.js"
+    "setup-db": "node ./Backend/db/setup.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
