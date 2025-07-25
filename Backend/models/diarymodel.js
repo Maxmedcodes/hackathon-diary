@@ -54,6 +54,32 @@ class DiaryModel {
         return new DiaryModel(response.rows[0]);
     }
 
+    static async getEntriesByDate(date) {
+        const response = await db.query(
+            'SELECT * FROM diaryentries WHERE DATE(created_at) = $1 ORDER BY created_at DESC',
+            [date]
+        );
+        
+        if (response.rows.length === 0) {
+            throw new Error(`No diary entries found for date: ${date}`);
+        }
+        
+        return response.rows.map(row => new DiaryModel(row));
+    }
+
+    static async getEntriesByCategory(category) {
+        const response = await db.query(
+            'SELECT * FROM diaryentries WHERE LOWER(category) = LOWER($1) ORDER BY created_at DESC',
+            [category]
+        );
+        
+        if (response.rows.length === 0) {
+            throw new Error(`No diary entries found for category: ${category}`);
+        }
+        
+        return response.rows.map(row => new DiaryModel(row));
+    }
+
 }
 
 module.exports = DiaryModel;

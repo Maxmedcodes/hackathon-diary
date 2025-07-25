@@ -5,10 +5,10 @@ const diaryController = require('../controllers/diarycontroller');
 const diaryRouter = Router();
 
 diaryRouter.get("/", diaryController.index);
-// diaryRouter.get("/:dateorCategory", diaryController.getByDateOrCategory);
-diaryRouter.get("/:id", diaryController.show);
 diaryRouter.post("/", diaryController.create);
-// diaryRouter.delete("/:id", diaryController.destroy);
-diaryRouter.patch("/:id", diaryController.update);
+diaryRouter.get("/:dateorCategory", diaryController.getByDateOrCategory);
+diaryRouter.get("/entry/:id", diaryController.show);
+diaryRouter.patch("/entry/:id", diaryController.update);
+// diaryRouter.delete("/entry/:id", diaryController.destroy);
 
 module.exports = diaryRouter;

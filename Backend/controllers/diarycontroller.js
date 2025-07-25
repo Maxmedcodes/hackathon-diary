@@ -41,9 +41,31 @@ async function update(req, res) {
   }
 }
 
+async function getByDateOrCategory(req, res) {
+  try {
+    const param = req.params.dateorCategory;
+    
+    const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+    
+    let diaryEntries;
+    if (dateRegex.test(param)) {
+      const [day, month, year] = param.split('-');
+      const dbDate = `${year}-${month}-${day}`;
+      diaryEntries = await diary.getEntriesByDate(dbDate);
+    } else {
+      diaryEntries = await diary.getEntriesByCategory(param);
+    }
+    
+    res.status(200).json(diaryEntries);
+  } catch (err) {
+    res.status(404).json({ "error": err.message });
+  }
+}
+
 module.exports = {
     index,
     create,
     show,
-    update
+    update,
+    getByDateOrCategory
 };
