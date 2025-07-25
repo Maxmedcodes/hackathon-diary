@@ -2,6 +2,7 @@
   "scripts": {
     "start": "node server.js",
     "dev:backend": "nodemon server.js",
+    "setup-db": "node ./Backend/db/setup.js",
     "dev:frontend": "http-server Frontend",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
   },
