@@ -94,4 +94,5 @@ document.querySelectorAll('.entry-preview').forEach(preview => {
             const shortText = words.slice(0, 10).join(' ') + '...read more';
             preview.innerText = shortText;
         }
-    });
+});
+    
