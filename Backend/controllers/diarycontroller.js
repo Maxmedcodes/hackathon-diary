@@ -29,8 +29,21 @@ async function show(req, res) {
   }
 }
 
+async function update(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    const data = req.body;
+    const diaryEntry = await diary.getEntryById(id);
+    const result = await diaryEntry.update(data);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(404).json({ "error": err.message })
+  }
+}
+
 module.exports = {
     index,
     create,
     show,
+    update
 };

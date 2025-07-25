@@ -43,6 +43,17 @@ class DiaryModel {
         return new DiaryModel(response.rows[0]);
     }
 
+    async update(data) {
+        const response = await db.query("UPDATE diaryentries SET content = $1 WHERE id = $2 RETURNING id, title, content, category, created_at;",
+        [data.content, this.id]);
+
+        if (response.rows.length != 1) {
+        throw new Error("Unable to update content.")
+        }
+
+        return new DiaryModel(response.rows[0]);
+    }
+
 }
 
 module.exports = DiaryModel;
