@@ -7,11 +7,11 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
   res.status(200).json({
-    title: "Dairy App",
+    title: "Diary App",
     description: "Record and manage your daily diary entries",
   })
 })
 
-app.use("/dairy", dairyRouter);
+app.use("/diary", dairyRouter);
 
 module.exports = app;
