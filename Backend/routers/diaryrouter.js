@@ -9,6 +9,6 @@ diaryRouter.post("/", diaryController.create);
 diaryRouter.get("/:dateorCategory", diaryController.getByDateOrCategory);
 diaryRouter.get("/entry/:id", diaryController.show);
 diaryRouter.patch("/entry/:id", diaryController.update);
-// diaryRouter.delete("/entry/:id", diaryController.destroy);
+diaryRouter.delete("/entry/:id", diaryController.destroy);
 
 module.exports = diaryRouter;

@@ -80,6 +80,17 @@ class DiaryModel {
         return response.rows.map(row => new DiaryModel(row));
     }
 
-}
+    async destroy() {
+        const response = await db.query('DELETE FROM diaryentries WHERE id = $1 RETURNING *;', [this.id]);
+
+        if (response.rows.length != 1) {
+            throw new Error("Unable to delete diary entry.")
+        }
+
+        return new DiaryModel(response.rows[0]);
+    }
+    }
+
+
 
 module.exports = DiaryModel;

@@ -62,10 +62,22 @@ async function getByDateOrCategory(req, res) {
   }
 }
 
+async function destroy(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    const diaryEntry = await diary.getEntryById(id);
+    const result = await diaryEntry.destroy();
+    res.status(200).json({ "message": "Diary entry deleted successfully", "entry": result });
+  } catch (err) {
+    res.status(404).json({ "error": err.message })
+  }
+}
+
 module.exports = {
     index,
     create,
     show,
     update,
-    getByDateOrCategory
+    getByDateOrCategory,
+    destroy
 };
