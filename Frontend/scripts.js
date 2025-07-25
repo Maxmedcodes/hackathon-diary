@@ -1,15 +1,21 @@
-import { fetchEntries, createEntry, updateEntry, deleteEntry } from './backendapi.js';
+import { fetchEntries, createEntry, updateEntry, deleteEntry, searchEntries, getEntryDetails } from './backendapi.js';
 
 const entryList = document.querySelector('.entry-list');
 const addEntryBtn = document.querySelector('.add-entry-btn');
 const saveBtn = document.querySelector('.btn-save');
 const deleteBtn = document.querySelector('.btn-delete');
+const detailsBtn = document.querySelector('.btn-details');
 const dateInput = document.querySelector('.date-input');
 const textEditor = document.querySelector('.text-editor');
+const searchBtn = document.querySelector('.search-btn');
+const clearSearchBtn = document.querySelector('.clear-search-btn');
+const searchDate = document.querySelector('.search-date');
+const searchCategory = document.querySelector('.search-category');
+const searchInfo = document.querySelector('.search-info');
 
 let entries = [];
 let activeEntry = null;
-
+let isSearchMode = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadEntriesFromBackend();
@@ -31,7 +37,6 @@ function loadEntry(entry, clickEvent = null) {
     activeEntry = entry;
     textEditor.value = entry.content || '';
     dateInput.value = formatDateForInput(entry.createdAt);
-    
     
     document.querySelectorAll('.entry-item').forEach(item => {
         item.classList.remove('active');
@@ -63,6 +68,100 @@ function formatDateDisplay(dateString) {
     });
 }
 
+function formatDateForSearch(dateString) {
+   
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
+}
+
+
+searchBtn.addEventListener('click', async () => {
+    const date = searchDate.value;
+    const category = searchCategory.value.trim();
+    
+    if (!date && !category) {
+        alert('Please enter a date or category to search');
+        return;
+    }
+    
+    try {
+        let searchParam;
+        let searchType;
+        
+        if (date && category) {
+            alert('Please search by either date OR category, not both');
+            return;
+        }
+        
+        if (date) {
+            searchParam = formatDateForSearch(date);
+            searchType = `date: ${formatDateDisplay(date)}`;
+        } else {
+            searchParam = category;
+            searchType = `category: ${category}`;
+        }
+        
+        const searchResults = await searchEntries(searchParam);
+        entries = searchResults;
+        isSearchMode = true;
+        renderEntryList();
+        showSearchInfo(`Found ${searchResults.length} entries for ${searchType}`);
+        console.log('Search results:', searchResults);
+    } catch (error) {
+        console.error('Error searching entries:', error);
+        showSearchInfo('No entries found for your search criteria');
+        entries = [];
+        renderEntryList();
+    }
+});
+
+clearSearchBtn.addEventListener('click', async () => {
+    searchDate.value = '';
+    searchCategory.value = '';
+    isSearchMode = false;
+    hideSearchInfo();
+    await loadEntriesFromBackend();
+});
+
+function showSearchInfo(message) {
+    searchInfo.textContent = message;
+    searchInfo.style.display = 'block';
+}
+
+function hideSearchInfo() {
+    searchInfo.style.display = 'none';
+}
+
+
+detailsBtn.addEventListener('click', async () => {
+    if (!activeEntry) {
+        alert('Please select an entry to view details');
+        return;
+    }
+    
+    try {
+        const entryDetails = await getEntryDetails(activeEntry.id);
+        const detailsText = `
+        Entry Details:
+        ═════════════════
+        ID: ${entryDetails.id}
+        Title: ${entryDetails.title}
+        Category: ${entryDetails.category}
+        Created: ${formatDateDisplay(entryDetails.createdAt)}
+
+        Content:
+        ${entryDetails.content}
+        `;
+        
+        
+        alert(detailsText);
+        console.log('Entry details:', entryDetails);
+    } catch (error) {
+        console.error('Error fetching entry details:', error);
+        alert('Failed to load entry details');
+    }
+});
+
 addEntryBtn.addEventListener('click', async () => {
     const newEntry = {
         title: `Entry ${new Date().toLocaleDateString()}`,
@@ -72,8 +171,18 @@ addEntryBtn.addEventListener('click', async () => {
     
     try {
         const createdEntry = await createEntry(newEntry);
-        entries.unshift(createdEntry);
-        renderEntryList();
+        
+        if (isSearchMode) {
+            isSearchMode = false;
+            hideSearchInfo();
+            searchDate.value = '';
+            searchCategory.value = '';
+            await loadEntriesFromBackend();
+        } else {
+            entries.unshift(createdEntry);
+            renderEntryList();
+        }
+        
         loadEntry(createdEntry); 
         console.log('Entry created successfully:', createdEntry);
     } catch (error) {
@@ -135,13 +244,14 @@ function renderEntryList() {
     entryList.innerHTML = '';
     
     if (entries.length === 0) {
-        entryList.innerHTML = '<li class="no-entries">No entries yet. Create your first entry!</li>';
+        const message = isSearchMode ? 'No entries found for your search criteria.' : 'No entries yet. Create your first entry!';
+        entryList.innerHTML = `<li class="no-entries">${message}</li>`;
         return;
     }
     
     entries.forEach((entry) => {
         const li = document.createElement('li');
-        li.className = 'entry-item';
+        li.className = `entry-item ${isSearchMode ? 'search-result' : ''}`;
         
         const previewWords = entry.content.split(" ").slice(0, 10).join(" ");
         const previewText = entry.content.split(" ").length > 10
@@ -151,10 +261,10 @@ function renderEntryList() {
         li.innerHTML = `
             <div class="entry-date">${formatDateDisplay(entry.createdAt)}</div>
             <div class="entry-preview">${previewText}</div>
+            <div class="entry-category" style="font-size: 0.75rem; color: #667eea; margin-top: 5px;">📁 ${entry.category}</div>
         `;
 
         li.addEventListener('click', (event) => loadEntry(entry, event)); 
         entryList.appendChild(li);
     });
 }
-    
